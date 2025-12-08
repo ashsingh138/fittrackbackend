@@ -42,7 +42,7 @@ export const registerUser = async (req, res) => {
 // @route   POST /api/users/login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email });
+  const user = await FitUser.findOne({ email });
 
   if (user && (await bcrypt.compare(password, user.password))) {
     res.json({
