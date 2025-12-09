@@ -3,10 +3,34 @@ import Diet from '../models/Diet.js';
 import Measurement from '../models/Measurement.js';
 
 // --- WORKOUTS ---
+// backend/controllers/dataController.js
+
+// --- WORKOUTS (Upsert Logic) ---
 export const addWorkout = async (req, res) => {
-  const workout = new Workout({ ...req.body, user: req.user._id });
-  const saved = await workout.save();
-  res.status(201).json(saved);
+  const { date, type, duration, exercises, completed } = req.body;
+
+  try {
+    // Check if a workout log already exists for this date
+    let workout = await Workout.findOne({ user: req.user._id, date });
+
+    if (workout) {
+      // UPDATE: Replace fields to support edits/deletes
+      if (exercises) workout.exercises = exercises; // Replaces the list (allows deleting items)
+      if (type) workout.type = type;
+      if (duration) workout.duration = duration;
+      if (completed !== undefined) workout.completed = completed;
+
+      const updated = await workout.save();
+      return res.json(updated);
+    } else {
+      // CREATE: New entry
+      const newWorkout = new Workout({ ...req.body, user: req.user._id });
+      const saved = await newWorkout.save();
+      return res.status(201).json(saved);
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getWorkouts = async (req, res) => {
@@ -21,19 +45,20 @@ export const addDiet = async (req, res) => {
   const { date, meals, water, eggs, score } = req.body;
 
   try {
-    // Try to find an existing log for this user & date
     let dietLog = await Diet.findOne({ user: req.user._id, date });
 
     if (dietLog) {
-      // If found, UPDATE it (Merge arrays)
+      // UPDATE: We REPLACE the arrays instead of pushing to them.
+      // This allows you to delete items (by sending a smaller array) 
+      // or edit items (by sending an array with changed values).
       if (meals) {
-        if (meals.breakfast) dietLog.meals.breakfast.push(...meals.breakfast);
-        if (meals.lunch) dietLog.meals.lunch.push(...meals.lunch);
-        if (meals.dinner) dietLog.meals.dinner.push(...meals.dinner);
-        if (meals.snacks) dietLog.meals.snacks.push(...meals.snacks);
-        if (meals.junk) dietLog.meals.junk.push(...meals.junk);
+        if (meals.breakfast) dietLog.meals.breakfast = meals.breakfast;
+        if (meals.lunch) dietLog.meals.lunch = meals.lunch;
+        if (meals.dinner) dietLog.meals.dinner = meals.dinner;
+        if (meals.snacks) dietLog.meals.snacks = meals.snacks;
+        if (meals.junk) dietLog.meals.junk = meals.junk;
       }
-      // Update counts if provided (overwrite or add? Let's overwrite for simple sync)
+      
       if (water !== undefined) dietLog.water = water;
       if (eggs !== undefined) dietLog.eggs = eggs;
       if (score !== undefined) dietLog.score = score;
@@ -41,7 +66,7 @@ export const addDiet = async (req, res) => {
       const updated = await dietLog.save();
       return res.json(updated);
     } else {
-      // If not found, CREATE new
+      // CREATE
       const diet = new Diet({ ...req.body, user: req.user._id });
       const saved = await diet.save();
       return res.status(201).json(saved);
@@ -50,6 +75,7 @@ export const addDiet = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+  
 
 // ... keep getDiet and other functions
 
