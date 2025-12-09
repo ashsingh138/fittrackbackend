@@ -3,7 +3,7 @@ import protect from '../middleware/authMiddleware.js';
 import { 
   addWorkout, getWorkouts, 
   addDiet, getDiet, 
-  addMeasurement, getMeasurements 
+  addMeasurement, getMeasurements,deleteDiet, deleteWorkout 
 } from '../controllers/dataController.js';
 
 const router = express.Router();
