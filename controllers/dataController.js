@@ -95,3 +95,32 @@ export const getMeasurements = async (req, res) => {
   const data = await Measurement.find({ user: req.user._id }).sort({ date: -1 });
   res.json(data);
 };
+
+// ... existing imports
+// Add these functions for DELETE logic
+
+// --- DELETE DIET LOG ---
+export const deleteDiet = async (req, res) => {
+  try {
+    const { date } = req.query; // We will pass date in URL: DELETE /api/diet?date=2025-01-01
+    const deleted = await Diet.findOneAndDelete({ user: req.user._id, date });
+    
+    if (!deleted) return res.status(404).json({ message: "Log not found" });
+    res.json({ message: "Diet log deleted", id: deleted._id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- DELETE WORKOUT LOG ---
+export const deleteWorkout = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const deleted = await Workout.findOneAndDelete({ user: req.user._id, date });
+    
+    if (!deleted) return res.status(404).json({ message: "Log not found" });
+    res.json({ message: "Workout log deleted", id: deleted._id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
